@@ -1,6 +1,6 @@
 import 'package:bloc/bloc.dart';
 import 'package:code/models/models.dart';
-import 'package:code/repositories/auth/repositories.dart';
+import 'package:code/repositories/repositories.dart';
 import 'package:equatable/equatable.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';

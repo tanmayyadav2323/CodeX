@@ -1,10 +1,9 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:code/models/models.dart';
-import 'package:code/utilities/utilities.dart';
+import 'package:code/config/constants.dart';
+import 'package:code/config/paths.dart';
 import 'package:firebase_auth/firebase_auth.dart' as auth;
 import 'package:code/repositories/auth/base_auth_repository.dart';
 import 'package:flutter/cupertino.dart';
-import 'package:flutter/services.dart';
 import 'package:github_sign_in/github_sign_in.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 
@@ -27,56 +26,38 @@ class AuthRepository extends BaseAuthRepository {
     required String phone,
     required verificationFailed,
   }) async {
-    try {
-      await _firebaseAuth.verifyPhoneNumber(
-        phoneNumber: phone,
-        verificationCompleted: (auth.PhoneAuthCredential credential) {},
-        verificationFailed: (err) {
-          verificationFailed(err);
-        },
-        codeSent: (String verificationId, int? resendToken) async {
-          _verificationId = verificationId;
-        },
-        timeout: const Duration(seconds: otpDuration),
-        codeAutoRetrievalTimeout: (_) {},
-      );
-      return true;
-    } on auth.FirebaseAuthException {
-      rethrow;
-    } on PlatformException {
-      rethrow;
-    }
+    await _firebaseAuth.verifyPhoneNumber(
+      phoneNumber: phone,
+      verificationCompleted: (auth.PhoneAuthCredential credential) {},
+      verificationFailed: (err) {
+        verificationFailed(err);
+      },
+      codeSent: (String verificationId, int? resendToken) async {
+        _verificationId = verificationId;
+      },
+      timeout: const Duration(seconds: otpDuration),
+      codeAutoRetrievalTimeout: (_) {},
+    );
+    return true;
   }
 
   @override
   Future<auth.UserCredential> verifyOTP({required String otp}) async {
-    try {
-      auth.PhoneAuthCredential credential = auth.PhoneAuthProvider.credential(
-          verificationId: _verificationId, smsCode: otp);
-      return await _firebaseAuth.signInWithCredential(credential);
-    } on auth.FirebaseAuthException {
-      rethrow;
-    } on PlatformException {
-      rethrow;
-    }
+    final credential = auth.PhoneAuthProvider.credential(
+        verificationId: _verificationId, smsCode: otp);
+    return storeUser(credential: credential);
   }
 
   @override
   Future<auth.UserCredential> signInWithGoogle() async {
-    try {
-      final GoogleSignInAccount? googleUser = await GoogleSignIn().signIn();
-      final GoogleSignInAuthentication? googleAuth =
-          await googleUser?.authentication;
-      final credential = auth.GoogleAuthProvider.credential(
-        accessToken: googleAuth?.accessToken,
-        idToken: googleAuth?.idToken,
-      );
-      return await _firebaseAuth.signInWithCredential(credential);
-    } on auth.FirebaseAuthException {
-      rethrow;
-    } on PlatformException {
-      rethrow;
-    }
+    final GoogleSignInAccount? googleUser = await GoogleSignIn().signIn();
+    final GoogleSignInAuthentication? googleAuth =
+        await googleUser?.authentication;
+    final credential = auth.GoogleAuthProvider.credential(
+      accessToken: googleAuth?.accessToken,
+      idToken: googleAuth?.idToken,
+    );
+    return storeUser(credential: credential);
   }
 
   @override
@@ -89,7 +70,23 @@ class AuthRepository extends BaseAuthRepository {
     final result = await gitHubSignIn.signIn(context);
     final githubAuthCredential =
         auth.GithubAuthProvider.credential(result.token!);
-    return await _firebaseAuth.signInWithCredential(githubAuthCredential);
+    return storeUser(credential: githubAuthCredential);
+  }
+
+  @override
+  Future<auth.UserCredential> storeUser({required credential}) async {
+    final userCredential = await _firebaseAuth.signInWithCredential(credential);
+    final doc = await _firebaseFirestore
+        .collection(Paths.users)
+        .doc(userCredential.user!.uid)
+        .get();
+    if (!doc.exists) {
+      _firebaseFirestore
+          .collection(Paths.users)
+          .doc(userCredential.user!.uid)
+          .set({});
+    }
+    return userCredential;
   }
 
   @override

@@ -9,6 +9,7 @@ abstract class BaseAuthRepository {
     required verificationFailed,
   });
   Future<auth.UserCredential> verifyOTP({required String otp});
+  Future<auth.UserCredential> storeUser({required credential});
   Future<auth.UserCredential> signInWithGoogle();
   Future<auth.UserCredential> signInWithGitHub(BuildContext context);
   Future<void> logOut();

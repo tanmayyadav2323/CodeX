@@ -1,4 +1,4 @@
-import 'package:code/repositories/auth/repositories.dart';
+import 'package:code/repositories/repositories.dart';
 import 'package:code/screens/authentication_screen/bloc/signin_bloc.dart';
 import 'package:code/screens/screens.dart';
 import 'package:code/widgets/widget.dart';

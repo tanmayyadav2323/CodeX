@@ -1,8 +1,7 @@
-import 'package:code/utilities/constants.dart';
-import 'package:flutter/gestures.dart';
+import 'package:code/config/constants.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:code/repositories/auth/repositories.dart';
+import 'package:code/repositories/repositories.dart';
 import 'package:code/widgets/widget.dart';
 import 'package:flutter_countdown_timer/flutter_countdown_timer.dart';
 import 'package:pinput/pin_put/pin_put.dart';
