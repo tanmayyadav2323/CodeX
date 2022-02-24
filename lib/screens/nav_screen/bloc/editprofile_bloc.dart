@@ -56,6 +56,7 @@ class EditprofileBloc extends Bloc<EditprofileEvent, EditprofileState> {
         userId: userId,
         name: user.name,
         username: user.username,
+        initialUsername: user.username,
         skills: user.skills,
         profileImageurl: user.profileImageUrl,
         linkedIn: user.linkedIn,
@@ -70,8 +71,15 @@ class EditprofileBloc extends Bloc<EditprofileEvent, EditprofileState> {
 
   Stream<EditprofileState> _mapProfileUsernameToState(
       ProfileUsernameChanged event) async* {
-    yield state.copyWith(
-        username: event.username, status: EditprofileStatus.initial);
+    final check = event.username != state.initialUsername
+        ? await _userRepository.usernameExists(query: event.username)
+        : false;
+    if (check) {
+      yield state.copyWith(status: EditprofileStatus.userNameExists);
+    } else {
+      yield state.copyWith(
+          username: event.username, status: EditprofileStatus.initial);
+    }
   }
 
   Stream<EditprofileState> _mapProfileSkillsToState(
@@ -106,7 +114,6 @@ class EditprofileBloc extends Bloc<EditprofileEvent, EditprofileState> {
       ProfileUpdateEvent event) async* {
     yield state.copyWith(status: EditprofileStatus.submitting);
     try {
-      await usernameExists();
       final user = await _userRepository.getUserWithId(userId: state.userId);
       var profileImageUrl = user.profileImageUrl;
       if (state.image != null) {
@@ -132,14 +139,9 @@ class EditprofileBloc extends Bloc<EditprofileEvent, EditprofileState> {
     }
   }
 
-  Stream<EditprofileState> usernameExists() async* {
-    final checkUsername =
-        await _userRepository.usernameExists(query: state.username);
-    if (checkUsername) {
-      yield state.copyWith(
-        status: EditprofileStatus.error,
-        failure: const Failure(message: 'Username Already Exists'),
-      );
-    }
+  Future<bool> usernameExists(String username) async {
+    return state.initialUsername != username
+        ? await _userRepository.usernameExists(query: username)
+        : false;
   }
 }

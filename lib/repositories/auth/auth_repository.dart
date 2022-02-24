@@ -1,5 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:code/config/constants.dart';
+import 'package:code/utils/constants.dart';
 import 'package:code/config/paths.dart';
 import 'package:firebase_auth/firebase_auth.dart' as auth;
 import 'package:code/repositories/auth/base_auth_repository.dart';
@@ -21,6 +21,7 @@ class AuthRepository extends BaseAuthRepository {
   Stream<auth.User?> get user => _firebaseAuth.userChanges();
 
   String _verificationId = "";
+  int? _token;
   @override
   Future<bool> sendOTP({
     required String phone,
@@ -34,7 +35,9 @@ class AuthRepository extends BaseAuthRepository {
       },
       codeSent: (String verificationId, int? resendToken) async {
         _verificationId = verificationId;
+        _token = resendToken;
       },
+      forceResendingToken: _token,
       timeout: const Duration(seconds: otpDuration),
       codeAutoRetrievalTimeout: (_) {},
     );

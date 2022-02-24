@@ -1,3 +1,5 @@
+import 'package:code/screens/messaging_screen/chat_screen.dart';
+import 'package:code/screens/messaging_screen/search/search_screen.dart';
 import 'package:code/screens/screens.dart';
 import 'package:flutter/material.dart';
 
@@ -17,7 +19,14 @@ class CustomRouter {
         return AuthenticationScreen.route();
       case PinCodeVerificationScreen.routename:
         return PinCodeVerificationScreen.route(
-            args: settings.arguments as PinCodeVerificationScreenArgs);
+          args: settings.arguments as PinCodeVerificationScreenArgs,
+        );
+      case MessagingScreen.routeName:
+        return MessagingScreen.route();
+      case ChatScreen.routeName:
+        return ChatScreen.route();
+      case SearchScreen.routeName:
+        return SearchScreen.route();
       default:
         return _errorRoute();
     }

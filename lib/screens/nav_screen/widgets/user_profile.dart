@@ -21,27 +21,20 @@ class UserProfile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return CircleAvatar(
-      backgroundColor: Colors.grey[200],
-      radius: radius,
-      backgroundImage: _backGroundImage(),
-      child: profileImageurl == null
-          ? Text(
-              name == '' ? 'Pic' : name[0],
-              style: TextStyle(color: Colors.black, fontSize: fontSize),
-            )
-          : null,
-    );
-  }
-
-  _backGroundImage() {
-    if (image != null) {
-      return FileImage(
-        image!,
-      ) as ImageProvider;
-    } else if (profileImageurl != null) {
-      return NetworkImage(profileImageurl!);
-    } else {
-      return null;
-    }
+        backgroundColor: Colors.grey[200],
+        radius: radius,
+        backgroundImage: image != null
+            ? FileImage(
+                image!,
+              ) as ImageProvider
+            : profileImageurl != null
+                ? NetworkImage(profileImageurl!)
+                : null,
+        child: profileImageurl == null && image == null
+            ? Text(
+                name == '' ? 'Pic' : name[0].toUpperCase(),
+                style: TextStyle(color: Colors.black, fontSize: fontSize),
+              )
+            : null);
   }
 }

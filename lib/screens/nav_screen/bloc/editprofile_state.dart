@@ -1,6 +1,6 @@
 part of 'editprofile_bloc.dart';
 
-enum EditprofileStatus { initial, submitting, success, error }
+enum EditprofileStatus { initial, userNameExists, submitting, success, error }
 
 class EditprofileState extends Equatable {
   final String userId;
@@ -8,6 +8,7 @@ class EditprofileState extends Equatable {
   final String? profileImageurl;
   final String name;
   final String username;
+  final String initialUsername;
   final String skills;
   final String linkedIn;
   final String github;
@@ -20,6 +21,7 @@ class EditprofileState extends Equatable {
     this.profileImageurl,
     required this.name,
     required this.username,
+    required this.initialUsername,
     required this.skills,
     required this.linkedIn,
     required this.github,
@@ -32,6 +34,7 @@ class EditprofileState extends Equatable {
       userId: '',
       image: null,
       profileImageurl: null,
+      initialUsername: '',
       name: '',
       username: '',
       skills: '',
@@ -50,6 +53,7 @@ class EditprofileState extends Equatable {
       image,
       name,
       username,
+      initialUsername,
       skills,
       linkedIn,
       github,
@@ -64,6 +68,7 @@ class EditprofileState extends Equatable {
     String? profileImageurl,
     String? name,
     String? username,
+    String? initialUsername,
     String? skills,
     String? linkedIn,
     String? github,
@@ -76,6 +81,7 @@ class EditprofileState extends Equatable {
       profileImageurl: profileImageurl ?? this.profileImageurl,
       name: name ?? this.name,
       username: username ?? this.username,
+      initialUsername: initialUsername ?? this.initialUsername,
       skills: skills ?? this.skills,
       linkedIn: linkedIn ?? this.linkedIn,
       github: github ?? this.github,

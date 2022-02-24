@@ -5,6 +5,7 @@ class RoomCard extends StatelessWidget {
   final String bio;
   final String imageUrl;
   final int numOfPeople;
+
   const RoomCard(
       {Key? key,
       required this.roomName,

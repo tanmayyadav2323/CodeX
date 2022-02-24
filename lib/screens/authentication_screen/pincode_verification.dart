@@ -1,4 +1,4 @@
-import 'package:code/config/constants.dart';
+import 'package:code/utils/constants.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:code/repositories/repositories.dart';

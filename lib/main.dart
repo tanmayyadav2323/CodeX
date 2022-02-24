@@ -1,15 +1,14 @@
 import 'package:code/blocs/blocs.dart';
 import 'package:code/config/custom_router.dart';
+import 'package:code/repositories/chat/chat_repository.dart';
 import 'package:code/repositories/repositories.dart';
 import 'package:code/screens/screens.dart';
+import 'package:code/utils/utils.dart';
 import 'package:equatable/equatable.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-
-import 'repositories/storage/storage_repository.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -34,6 +33,9 @@ class MyApp extends StatelessWidget {
         RepositoryProvider<StorageRepository>(
           create: (_) => StorageRepository(),
         ),
+        RepositoryProvider<ChatRepository>(
+          create: (_) => ChatRepository(),
+        ),
       ],
       child: MultiBlocProvider(
         providers: [
@@ -47,20 +49,18 @@ class MyApp extends StatelessWidget {
           title: 'Flutter Instagram',
           debugShowCheckedModeBanner: false,
           theme: ThemeData(
-            primarySwatch: Colors.blue,
-            scaffoldBackgroundColor: Colors.grey[50],
+            scaffoldBackgroundColor: scaffoldBackgroundColor,
+            primaryColor: appBarBackgroundColor,
+            colorScheme: ColorScheme.fromSwatch()
+                .copyWith(secondary: Colors.lightGreen[50]),
             appBarTheme: const AppBarTheme(
-              color: Colors.white,
-              iconTheme: IconThemeData(color: Colors.black),
-              textTheme: TextTheme(
-                headline6: TextStyle(
+                color: appBarBackgroundColor,
+                titleTextStyle: TextStyle(
                   color: Colors.black,
-                  fontSize: 20.0,
-                  fontWeight: FontWeight.w600,
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
                 ),
-              ),
-              systemOverlayStyle: SystemUiOverlayStyle.dark,
-            ),
+                iconTheme: IconThemeData(color: Colors.black)),
           ),
           onGenerateRoute: CustomRouter.onGenerateRoute,
           initialRoute: SplashScreen.routename,
