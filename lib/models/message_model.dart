@@ -5,23 +5,36 @@ class Message {
   final String? senderId;
   final String? text;
   final String? imageUrl;
+  final bool isLiked;
   final Timestamp? timestamp;
 
   Message({
     this.id,
     this.senderId,
+    this.isLiked = false,
     this.text,
     this.imageUrl,
     this.timestamp,
   });
 
-  factory Message.fromDoc(DocumentSnapshot doc) {
+  List<Object> get props => [
+        id!,
+        senderId!,
+        isLiked,
+        text!,
+        imageUrl!,
+        timestamp!,
+      ];
+
+  static Future<Message> fromDoc(DocumentSnapshot doc) async {
+    final data = doc.data() as Map<String, dynamic>;
     return Message(
       id: doc.id,
-      senderId: doc['senderId'],
-      text: doc['text'],
-      imageUrl: doc['imageUrl'],
-      timestamp: doc['timestamp'],
+      senderId: data['senderId'] ?? "",
+      text: data['text'] ?? "",
+      imageUrl: data['imageUrl'],
+      isLiked: data['isLiked'],
+      timestamp: data['timestamp'] as Timestamp,
     );
   }
 }

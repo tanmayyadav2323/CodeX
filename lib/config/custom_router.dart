@@ -1,5 +1,7 @@
-import 'package:code/screens/messaging_screen/chat_screen.dart';
 import 'package:code/screens/messaging_screen/search/search_screen.dart';
+import 'package:code/screens/nav_screen/create_room_screen.dart';
+import 'package:code/screens/room_screen/room_description.dart';
+import 'package:code/screens/room_screen/room_screen.dart';
 import 'package:code/screens/screens.dart';
 import 'package:flutter/material.dart';
 
@@ -24,9 +26,17 @@ class CustomRouter {
       case MessagingScreen.routeName:
         return MessagingScreen.route();
       case ChatScreen.routeName:
-        return ChatScreen.route();
+        return ChatScreen.route(
+          args: settings.arguments as ChatScreenArgs,
+        );
       case SearchScreen.routeName:
         return SearchScreen.route();
+      case CreateRoomScreen.routeName:
+        return CreateRoomScreen.route();
+      case RoomScreen.routeName:
+        return RoomScreen.route(args: settings.arguments as RoomArgs);
+      case RoomDescription.routeName:
+        return RoomDescription.route(args: settings.arguments as RoomDesArgs);
       default:
         return _errorRoute();
     }

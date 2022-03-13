@@ -24,7 +24,7 @@ class ImageHelper {
           lockAspectRatio: false,
         ),
         iosUiSettings: const IOSUiSettings(),
-        compressQuality: 40,
+        compressQuality: 70,
       );
       return croppedFile!;
     }

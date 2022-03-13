@@ -1,6 +1,16 @@
 part of 'editprofile_bloc.dart';
 
-enum EditprofileStatus { initial, userNameExists, submitting, success, error }
+enum EditprofileStatus {
+  initial,
+  userNameExists,
+  submitting,
+  success,
+  uploadingRoomImage,
+  uploadedRoomImage,
+  searchingRoom,
+  searchedRoom,
+  error
+}
 
 class EditprofileState extends Equatable {
   final String userId;
@@ -14,11 +24,15 @@ class EditprofileState extends Equatable {
   final String github;
   final EditprofileStatus status;
   final Failure failure;
+  final String? roomImage;
+  final List<Room> rooms;
+  final List<Room> withMe;
+  final List<Room> withoutMe;
 
   const EditprofileState({
     required this.userId,
     required this.image,
-    this.profileImageurl,
+    required this.profileImageurl,
     required this.name,
     required this.username,
     required this.initialUsername,
@@ -27,6 +41,10 @@ class EditprofileState extends Equatable {
     required this.github,
     required this.status,
     required this.failure,
+    required this.roomImage,
+    required this.rooms,
+    required this.withMe,
+    required this.withoutMe,
   });
 
   factory EditprofileState.initial() {
@@ -35,10 +53,14 @@ class EditprofileState extends Equatable {
       image: null,
       profileImageurl: null,
       initialUsername: '',
+      withMe: [],
+      withoutMe: [],
       name: '',
       username: '',
       skills: '',
       linkedIn: '',
+      rooms: [],
+      roomImage: null,
       github: '',
       failure: Failure(),
       status: EditprofileStatus.initial,
@@ -52,8 +74,12 @@ class EditprofileState extends Equatable {
       profileImageurl,
       image,
       name,
+      rooms,
       username,
+      withMe,
+      withoutMe,
       initialUsername,
+      roomImage,
       skills,
       linkedIn,
       github,
@@ -74,6 +100,10 @@ class EditprofileState extends Equatable {
     String? github,
     EditprofileStatus? status,
     Failure? failure,
+    String? roomImage,
+    List<Room>? rooms,
+    List<Room>? withMe,
+    List<Room>? withoutMe,
   }) {
     return EditprofileState(
       userId: userId ?? this.userId,
@@ -87,6 +117,10 @@ class EditprofileState extends Equatable {
       github: github ?? this.github,
       status: status ?? this.status,
       failure: failure ?? this.failure,
+      roomImage: roomImage ?? this.roomImage,
+      rooms: rooms ?? this.rooms,
+      withMe: withMe ?? this.withMe,
+      withoutMe: withoutMe ?? this.withoutMe,
     );
   }
 }

@@ -1,6 +1,6 @@
 import 'package:code/blocs/blocs.dart';
 import 'package:code/repositories/chat/chat_repository.dart';
-import 'package:code/screens/nav_screen/widgets/user_profile.dart';
+import 'package:code/widgets/widget.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'cubit/search_cubit.dart';
@@ -28,11 +28,17 @@ class SearchScreen extends StatefulWidget {
 }
 
 class _SearchScreenState extends State<SearchScreen> {
-  final TextEditingController _textEditingController = TextEditingController();
+  TextEditingController? _textEditingController;
+
+  @override
+  void initState() {
+    _textEditingController = TextEditingController();
+    super.initState();
+  }
 
   @override
   void dispose() {
-    _textEditingController.dispose();
+    _textEditingController?.dispose();
     super.dispose();
   }
 
@@ -52,14 +58,15 @@ class _SearchScreenState extends State<SearchScreen> {
                 suffixIcon: IconButton(
                   onPressed: () {
                     context.read<SearchCubit>().clearSearch();
-                    _textEditingController.clear();
+                    _textEditingController?.clear();
                   },
                   icon: const Icon(Icons.clear),
                 ),
               ),
               textInputAction: TextInputAction.search,
               textAlignVertical: TextAlignVertical.center,
-              onSubmitted: (value) {
+              onChanged: (value) {
+                context.read<SearchCubit>().clearSearch();
                 if (value.trim().isNotEmpty) {
                   context.read<SearchCubit>().searchUser(query: value.trim());
                 }
@@ -70,9 +77,19 @@ class _SearchScreenState extends State<SearchScreen> {
             builder: (context, state) {
               switch (state.status) {
                 case SearchStatus.error:
-                  return Text(
-                    state.failure.message,
-                    textAlign: TextAlign.center,
+                  return Center(
+                    child: Text(
+                      state.failure.message,
+                      style: Theme.of(context).textTheme.headline6,
+                    ),
+                  );
+                case SearchStatus.initial:
+                  return Center(
+                    child: Text(
+                      "Search and Connect With People",
+                      maxLines: 2,
+                      style: Theme.of(context).textTheme.headline6,
+                    ),
                   );
                 case SearchStatus.loading:
                   return const Center(
@@ -93,31 +110,50 @@ class _SearchScreenState extends State<SearchScreen> {
                                 user.username,
                                 style: const TextStyle(fontSize: 16.0),
                               ),
-                              onTap: () => showDialog(
-                                context: context,
-                                builder: (context) => AlertDialog(
-                                  title: Text(user.name),
-                                  content: UserProfile(
-                                    radius: 200,
-                                    name: user.name,
-                                    fontSize: 100,
-                                    profileImageurl: user.profileImageUrl,
-                                  ),
-                                ),
-                              ),
+                              onTap: () async {
+                                FocusScope.of(context).unfocus();
+                                return buildUserAllInfoProfile(
+                                  context: context,
+                                  name: user.name,
+                                  gitHub: user.github,
+                                  imageUrl: user.profileImageUrl,
+                                  linkedIn: user.linkedIn,
+                                  skills: user.skills,
+                                );
+                              },
                               trailing: ElevatedButton(
-                                  onPressed: () {
+                                  onPressed: () async {
+                                    FocusScope.of(context).unfocus();
+
+                                    final chatExists = await context
+                                        .read<SearchCubit>()
+                                        .chatExists(user.id);
+
                                     context
                                         .read<SearchCubit>()
                                         .createChat(user.id);
+
+                                    Navigator.of(context).pop();
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                        content: Text(
+                                          chatExists
+                                              ? 'Chat Exists'
+                                              : 'Chat Created',
+                                        ),
+                                        duration: const Duration(seconds: 2),
+                                      ),
+                                    );
                                   },
-                                  child: const Text('Chat')),
+                                  child: const Text('message')),
                             );
                           },
                           itemCount: state.users.length)
-                      : const Text(
-                          "No Users Found",
-                          textAlign: TextAlign.center,
+                      : Center(
+                          child: Text(
+                            "No Users Found",
+                            style: Theme.of(context).textTheme.headline6,
+                          ),
                         );
                 default:
                   return const SizedBox.shrink();

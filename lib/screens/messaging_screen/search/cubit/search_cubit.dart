@@ -37,6 +37,11 @@ class SearchCubit extends Cubit<SearchState> {
     emit(state.copyWith(users: [], status: SearchStatus.initial));
   }
 
+  Future<bool> chatExists(String userId) async {
+    final currentUserId = _authBloc.state.user!.uid;
+    return await _chatRepository.privateChatExists(currentUserId, userId);
+  }
+
   void createChat(String userId) {
     final currentUserId = _authBloc.state.user!.uid;
     _chatRepository.privateChat(currentUserId, userId);

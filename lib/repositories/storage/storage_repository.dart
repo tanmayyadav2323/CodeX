@@ -39,12 +39,11 @@ class StorageRepository extends BaseStorageRepository {
     }
   }
 
-  @override
   Future<String> uploadProfileImage({String? url, required File image}) async {
     try {
       String? imageId = const Uuid().v4();
 
-      if (url!.isNotEmpty) {
+      if (url != null) {
         final exp = RegExp(r'userProfile_(.*).jpg');
         imageId = exp.firstMatch(url)![1];
       }
@@ -61,17 +60,23 @@ class StorageRepository extends BaseStorageRepository {
 
   Future<String> uploadChatImage(
       {required String? url, required File imageFile}) async {
-    String? imageId = const Uuid().v4();
-    File image = await _compressImage(imageId, imageFile);
+    try {
+      String? imageId = const Uuid().v4();
+      File image = await _compressImage(imageId, imageFile);
 
-    if (url != null) {
-      RegExp exp = RegExp(r'chat_(.*).jpg');
-      imageId = exp.firstMatch(url)![1];
+      if (url != null) {
+        RegExp exp = RegExp(r'chat_(.*).jpg');
+        imageId = exp.firstMatch(url)![1];
+      }
+
+      String downloadUrl = await _uploadImage(
+          ref: 'images/chats/chat_$imageId.jpg', image: image);
+      return downloadUrl;
+    } on FirebaseAuthException catch (err) {
+      throw Failure(code: err.code, message: err.message!);
+    } on PlatformException catch (err) {
+      throw Failure(code: err.code, message: err.message!);
     }
-
-    String downloadUrl =
-        await _uploadImage(ref: 'images/chats/chat_$imageId.jpg', image: image);
-    return downloadUrl;
   }
 
   Future<String> uploadMessageImage(File imageFile) async {

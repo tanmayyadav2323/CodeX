@@ -10,6 +10,7 @@ class PrivateChat {
   final String? recentSender;
   final String? imageUrl;
   final String? name;
+  final String? recentMessage;
   final String? linkedIn;
   final String? gitHub;
   final String? skills;
@@ -22,6 +23,7 @@ class PrivateChat {
     this.recentSender,
     this.imageUrl,
     this.name,
+    this.recentMessage,
     this.linkedIn,
     this.gitHub,
     this.skills,
@@ -33,6 +35,7 @@ class PrivateChat {
         recentTimestamp!,
         readStatus,
         recentSender!,
+        recentMessage!,
         imageUrl!,
         name!,
         linkedIn!,
@@ -40,7 +43,7 @@ class PrivateChat {
         skills!,
       ];
 
-  static Future<PrivateChat?> fromDoc(DocumentSnapshot doc, User user) async {
+  static Future<PrivateChat> fromDoc(DocumentSnapshot doc, User user) async {
     final data = doc.data() as Map<String, dynamic>;
     return PrivateChat(
       id: doc.id,
@@ -48,6 +51,7 @@ class PrivateChat {
       recentTimestamp: data['recentTimestamp'] ?? '',
       memberIds: data['memberIds'] ?? '',
       readStatus: data['readStatus'] ?? '',
+      recentMessage: data['recentMessage'] ?? '',
       name: user.name,
       gitHub: user.github,
       imageUrl: user.profileImageUrl,
@@ -64,6 +68,7 @@ class PrivateChat {
     String? recentSender,
     String? imageUrl,
     String? name,
+    String? recentMessage,
     String? linkedIn,
     String? gitHub,
     String? skills,
@@ -76,6 +81,7 @@ class PrivateChat {
       recentSender: recentSender ?? this.recentSender,
       imageUrl: imageUrl ?? this.imageUrl,
       name: name ?? this.name,
+      recentMessage: recentMessage ?? this.recentMessage,
       linkedIn: linkedIn ?? this.linkedIn,
       gitHub: gitHub ?? this.gitHub,
       skills: skills ?? this.skills,

@@ -2,10 +2,16 @@ import 'dart:io';
 
 import 'package:code/blocs/auth/auth_bloc.dart';
 import 'package:code/helpers/image_helper.dart';
+import 'package:code/models/models.dart';
+import 'package:code/repositories/chat/chat_repository.dart';
 import 'package:code/repositories/repositories.dart';
+import 'package:code/screens/messaging_screen/bloc/message_bloc.dart';
 import 'package:code/screens/messaging_screen/message_screen.dart';
 import 'package:code/screens/nav_screen/bloc/editprofile_bloc.dart';
-import 'package:code/screens/nav_screen/widgets/user_profile.dart';
+import 'package:code/screens/nav_screen/create_room_screen.dart';
+import 'package:code/screens/room_screen/room_screen.dart';
+import 'package:code/screens/screens.dart';
+import 'package:code/widgets/user_profile.dart';
 
 import 'package:code/utils/utils.dart';
 import 'package:code/widgets/widget.dart';
@@ -25,10 +31,14 @@ class NavScreen extends StatefulWidget {
       settings: const RouteSettings(name: routename),
       builder: (context) => BlocProvider<EditprofileBloc>(
         create: (_) => EditprofileBloc(
-            userRepository: context.read<UserRepository>(),
-            storageRepository: context.read<StorageRepository>(),
-            authBloc: context.read<AuthBloc>(),
-            authRepository: context.read<AuthRepository>()),
+          userRepository: context.read<UserRepository>(),
+          storageRepository: context.read<StorageRepository>(),
+          authBloc: context.read<AuthBloc>(),
+          authRepository: context.read<AuthRepository>(),
+          chatRepository: context.read<ChatRepository>(),
+        )
+          ..add(const FetchRoom())
+          ..add(const ProfileLoadUserEvent()),
         child: const NavScreen(),
       ),
     );
@@ -42,7 +52,6 @@ class _NavScreenState extends State<NavScreen> {
   @override
   Widget build(BuildContext context) {
     final size = MediaQuery.of(context).size;
-    context.read<EditprofileBloc>().add(const ProfileLoadUserEvent());
     return WillPopScope(
       onWillPop: () async => false,
       child: BlocConsumer<EditprofileBloc, EditprofileState>(
@@ -55,168 +64,35 @@ class _NavScreenState extends State<NavScreen> {
           }
         },
         builder: (context, state) {
-          return Scaffold(
-            appBar: AppBar(
-              elevation: 0,
-              title: const Text('CODE'),
-              leading: Builder(
-                builder: (BuildContext context) {
-                  return IconButton(
-                    icon: Center(
-                      child: UserProfile(
-                        image: state.image,
-                        profileImageurl: state.profileImageurl,
-                        radius: size.height * 0.05,
-                        name: state.name,
-                        fontSize: size.height * 0.025,
+          return GestureDetector(
+            onTap: () => FocusScope.of(context).unfocus(),
+            child: Scaffold(
+              resizeToAvoidBottomInset: false,
+              appBar: AppBar(
+                elevation: 0,
+                title: const Text('CODE'),
+                leading: Builder(
+                  builder: (BuildContext context) {
+                    return IconButton(
+                      icon: Center(
+                        child: UserProfile(
+                          image: state.image,
+                          profileImageurl: state.profileImageurl,
+                          radius: size.height * 0.05,
+                          name: state.name,
+                          fontSize: size.height * 0.025,
+                        ),
                       ),
-                    ),
-                    onPressed: () {
-                      Scaffold.of(context).openDrawer();
-                    },
-                    tooltip:
-                        MaterialLocalizations.of(context).openAppDrawerTooltip,
-                  );
-                },
+                      onPressed: () {
+                        Scaffold.of(context).openDrawer();
+                      },
+                    );
+                  },
+                ),
               ),
-            ),
-            drawer: _buildDrawer(state, context),
-            body: Stack(
-              children: [
-                Positioned.fill(
-                  child: Align(
-                    alignment: Alignment.topCenter,
-                    child: Container(
-                      padding: const EdgeInsets.all(10.0),
-                      height: size.height * 0.1,
-                      child: TextField(
-                        decoration: InputDecoration(
-                          contentPadding: const EdgeInsets.all(1),
-                          hintText: 'Search for rooms',
-                          prefixIcon: const Icon(Icons.search),
-                          suffixIcon: const Icon(Icons.clear_rounded),
-                          fillColor: Colors.white,
-                          filled: true,
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(20.0),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-                Padding(
-                  padding: EdgeInsets.only(
-                    top: size.height * 0.08,
-                    left: size.width * 0.035,
-                    right: size.width * 0.035,
-                  ),
-                  child: SingleChildScrollView(
-                    child: Column(
-                      children: const [
-                        RoomCard(
-                          roomName: "BlockChain",
-                          bio: "Hurry Up bloackchain People Join now",
-                          numOfPeople: 200,
-                          imageUrl:
-                              "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRU_vEQqsrl46FtarbCW-L518avHjgAUPBlHw&usqp=CAU",
-                        ),
-                        RoomCard(
-                          roomName: "Competitive Programming",
-                          bio:
-                              "Hurry up people with competitive skills joim=n now ",
-                          numOfPeople: 450,
-                          imageUrl:
-                              "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQKa-kPsTDUACR7EcY_-e3BgHX_e9UnghKxmw&usqp=CAU",
-                        ),
-                        RoomCard(
-                          roomName: "DSA",
-                          bio:
-                              "Hurry up people with DSAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA ",
-                          numOfPeople: 450,
-                          imageUrl:
-                              "https://image.shutterstock.com/image-vector/dsa-creative-logo-monogram-white-260nw-1835276254.jpg",
-                        ),
-                        RoomCard(
-                          roomName: "BlockChain",
-                          bio: "Hurry Up bloackchain People Join now",
-                          numOfPeople: 200,
-                          imageUrl:
-                              "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRU_vEQqsrl46FtarbCW-L518avHjgAUPBlHw&usqp=CAU",
-                        ),
-                        RoomCard(
-                          roomName: "Competitive Programming",
-                          bio:
-                              "Hurry up people with competitive skills joim=n now ",
-                          numOfPeople: 450,
-                          imageUrl:
-                              "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQKa-kPsTDUACR7EcY_-e3BgHX_e9UnghKxmw&usqp=CAU",
-                        ),
-                        RoomCard(
-                          roomName: "DSA",
-                          bio:
-                              "Hurry up people with DSAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA ",
-                          numOfPeople: 450,
-                          imageUrl:
-                              "https://image.shutterstock.com/image-vector/dsa-creative-logo-monogram-white-260nw-1835276254.jpg",
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-                Positioned.fill(
-                  child: Align(
-                    alignment: Alignment.bottomCenter,
-                    child: Container(
-                      height: size.height * 0.1,
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          begin: Alignment.topCenter,
-                          end: Alignment.bottomCenter,
-                          stops: const [0.1, 0.9],
-                          colors: [
-                            const Color(0xffF1EFE5).withOpacity(0.2),
-                            const Color(0xffF1EFE5),
-                          ],
-                        ),
-                      ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceAround,
-                        children: [
-                          FloatingActionButton.extended(
-                            onPressed: () {},
-                            label: const Text(
-                              "Create Room",
-                              style: TextStyle(
-                                  fontWeight: FontWeight.bold, fontSize: 16),
-                            ),
-                            icon: const Icon(Icons.add),
-                            elevation: 10,
-                            foregroundColor: Colors.white,
-                            backgroundColor: const Color(0xff88D198),
-                          ),
-                          ElevatedButton(
-                            onPressed: () {
-                              Navigator.of(context)
-                                  .pushNamed(MessagingScreen.routeName);
-                            },
-                            child: Icon(
-                              Icons.message,
-                              size: size.height * 0.035,
-                            ),
-                            style: ElevatedButton.styleFrom(
-                              elevation: 10,
-                              shape: CircleBorder(),
-                              primary: Color(0xff88D198),
-                              
-                            ),
-                          )
-                        ],
-                      ),
-                    ),
-                  ),
-                )
-              ],
+              drawer: _buildDrawer(state, context),
+              body: _buildBody(context, state),
+              floatingActionButton: _buildFloatingActionButton(context, state),
             ),
           );
         },
@@ -472,7 +348,7 @@ Drawer _buildDrawer(EditprofileState state, BuildContext context) {
                             final check = await context
                                 .read<EditprofileBloc>()
                                 .usernameExists(usernameController.text);
-                            if (usernameController.text == '') {
+                            if (usernameController.text == 'Tanmay') {
                               showDialog(
                                 context: context,
                                 builder: (_) => const AlertDialog(
@@ -556,4 +432,162 @@ void _selectProfileImage(BuildContext context) async {
           ),
         );
   }
+}
+
+_buildBody(BuildContext context, EditprofileState state) {
+  final size = MediaQuery.of(context).size;
+  return Column(
+    children: [
+      Container(
+        padding: const EdgeInsets.only(top: 10, left: 10, right: 10),
+        height: size.height * 0.075,
+        color: Colors.transparent,
+        child: TextField(
+          onChanged: (value) {
+            if (value.trim().isEmpty) {
+              context.read<EditprofileBloc>().add(const ClearRoomSearch());
+            } else {
+              context.read<EditprofileBloc>().add(SearchRoom(roomName: value));
+            }
+          },
+          decoration: InputDecoration(
+            contentPadding: const EdgeInsets.all(1),
+            hintText: 'Search for rooms',
+            prefixIcon: const Icon(Icons.search),
+            suffixIcon: const Icon(Icons.clear_rounded),
+            filled: true,
+            fillColor: Colors.white,
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(20.0),
+            ),
+          ),
+        ),
+      ),
+      state.status == EditprofileStatus.searchingRoom
+          ? Expanded(child: searchList(context, state))
+          : Expanded(child: roomsList(context, state)),
+    ],
+  );
+}
+
+_buildFloatingActionButton(BuildContext context, EditprofileState state) {
+  final size = MediaQuery.of(context).size;
+  return Row(
+    mainAxisAlignment: MainAxisAlignment.spaceAround,
+    children: [
+      FloatingActionButton.extended(
+        onPressed: () {
+          FocusScope.of(context).unfocus();
+          Navigator.of(context).pushNamed(CreateRoomScreen.routeName);
+        },
+        label: const Text(
+          "Create Room",
+          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+        ),
+        icon: const Icon(Icons.add),
+        elevation: 10,
+        foregroundColor: Colors.white,
+        backgroundColor: const Color(0xff88D198),
+      ),
+      ElevatedButton(
+        onPressed: () {
+          FocusScope.of(context).unfocus();
+          Navigator.of(context).pushNamed(MessagingScreen.routeName);
+        },
+        child: Icon(
+          Icons.message,
+          size: size.height * 0.035,
+        ),
+        style: ElevatedButton.styleFrom(
+          elevation: 10,
+          shape: const CircleBorder(),
+          primary: const Color(0xff88D198),
+        ),
+      )
+    ],
+  );
+}
+
+dynamic createRoom(BuildContext context, EditprofileState state) {
+  final _formKey = GlobalKey<FormState>();
+  TextEditingController _createRoom = TextEditingController();
+  TextEditingController _bio = TextEditingController();
+
+  return state.status == EditprofileStatus.uploadingRoomImage
+      ? const CircularProgressIndicator()
+      : showDialog(
+          context: context,
+          builder: (_) => AlertDialog(
+            title: const Text("Create Room"),
+            content: null,
+            actions: [
+              ElevatedButton(onPressed: () {}, child: const Text("Create"))
+            ],
+          ),
+        );
+}
+
+dynamic roomsList(BuildContext context, EditprofileState state) {
+  final rooms = state.rooms;
+  if (rooms.isNotEmpty) {
+    return ListView.builder(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+      itemCount: rooms.length,
+      itemBuilder: (BuildContext context, int i) => GestureDetector(
+        onTap: () {
+          Navigator.of(context).pushNamed(RoomScreen.routeName,
+              arguments: RoomArgs(roomId: rooms[i].id!));
+        },
+        child: RoomCard(
+            roomName: rooms[i].name,
+            bio: rooms[i].bio,
+            imageUrl: rooms[i].imageUrl,
+            numOfPeople: rooms[i].numofMembers),
+      ),
+    );
+  } else {
+    return Container();
+  }
+}
+
+dynamic searchList(BuildContext context, EditprofileState state) {
+  final withMe = state.withMe;
+  final withoutMe = state.withoutMe;
+  if (withMe.isEmpty && withoutMe.isEmpty) {
+    return const Center(
+      child: Text('No Rooms'),
+    );
+  } else {
+    return ListView.builder(
+      itemBuilder: (_, index) {
+        if (index < withMe.length) {
+          return RoomCard(
+            roomName: withMe[index].name,
+            bio: withMe[index].bio,
+            imageUrl: withMe[index].imageUrl,
+            numOfPeople: withMe[index].numofMembers,
+            onPressed: () => openRoom(withMe[index].id!, context),
+            buttomText: 'Open',
+          );
+        } else {
+          int i = index - withMe.length;
+          return RoomCard(
+            roomName: withoutMe[i].name,
+            bio: withoutMe[i].bio,
+            imageUrl: withoutMe[i].imageUrl,
+            numOfPeople: withoutMe[i].numofMembers,
+            onPressed: () =>
+                context.read<EditprofileBloc>().updateRoom(withoutMe[i].id!),
+            buttomText: 'Join',
+          );
+        }
+      },
+      itemCount: withMe.length + withoutMe.length,
+    );
+  }
+}
+
+void openRoom(String roomId, BuildContext context) {
+  Navigator.of(context)
+      .pushNamed(RoomScreen.routeName, arguments: RoomArgs(roomId: roomId));
 }

@@ -5,14 +5,18 @@ class RoomCard extends StatelessWidget {
   final String bio;
   final String imageUrl;
   final int numOfPeople;
+  final Function()? onPressed;
+  final String? buttomText;
 
-  const RoomCard(
-      {Key? key,
-      required this.roomName,
-      required this.bio,
-      required this.imageUrl,
-      required this.numOfPeople})
-      : super(key: key);
+  const RoomCard({
+    Key? key,
+    required this.roomName,
+    required this.bio,
+    required this.imageUrl,
+    required this.numOfPeople,
+    this.onPressed,
+    this.buttomText,
+  }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -77,12 +81,20 @@ class RoomCard extends StatelessWidget {
                     height: 15,
                   ),
                   Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Icon(Icons.person),
-                      Text(
-                        numOfPeople.toString(),
-                        style: const TextStyle(fontWeight: FontWeight.bold),
-                      )
+                      Row(
+                        children: [
+                          const Icon(Icons.person),
+                          Text(
+                            numOfPeople.toString(),
+                            style: const TextStyle(fontWeight: FontWeight.bold),
+                          )
+                        ],
+                      ),
+                      if (buttomText != null)
+                        ElevatedButton(
+                            onPressed: onPressed, child: Text(buttomText!))
                     ],
                   )
                 ],

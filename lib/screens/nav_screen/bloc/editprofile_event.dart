@@ -67,3 +67,58 @@ class ProfileLogOutEvent extends EditprofileEvent {
   @override
   List<Object> get props => [];
 }
+
+class UploadRoomImage extends EditprofileEvent {
+  final BuildContext context;
+  const UploadRoomImage({
+    required this.context,
+  });
+  @override
+  List<Object> get props => [context];
+}
+
+class CreateRoom extends EditprofileEvent {
+  final Room room;
+  const CreateRoom({
+    required this.room,
+  });
+  @override
+  List<Object> get props => [room];
+}
+
+class ClearRoomImage extends EditprofileEvent {
+  const ClearRoomImage();
+  @override
+  List<Object> get props => [];
+}
+
+class FetchRoom extends EditprofileEvent {
+  const FetchRoom();
+  @override
+  List<Object> get props => [];
+}
+
+class UpdateAllRooms extends EditprofileEvent {
+  List<Room> rooms;
+  UpdateAllRooms({
+    required this.rooms,
+  });
+  @override
+  List<Object> get props => [rooms];
+}
+
+class SearchRoom extends EditprofileEvent {
+  final String roomName;
+  const SearchRoom({
+    required this.roomName,
+  });
+
+  @override
+  List<Object> get props => [roomName];
+}
+
+class ClearRoomSearch extends EditprofileEvent {
+  const ClearRoomSearch();
+  @override
+  List<Object> get props => [];
+}

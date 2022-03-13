@@ -1,10 +1,15 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:bloc/bloc.dart';
 import 'package:code/blocs/blocs.dart';
+import 'package:code/helpers/image_helper.dart';
 import 'package:code/models/models.dart';
+import 'package:code/repositories/chat/chat_repository.dart';
 import 'package:code/repositories/repositories.dart';
 import 'package:equatable/equatable.dart';
+import 'package:flutter/cupertino.dart';
+import 'package:image_cropper/image_cropper.dart';
 
 part 'editprofile_event.dart';
 part 'editprofile_state.dart';
@@ -14,16 +19,20 @@ class EditprofileBloc extends Bloc<EditprofileEvent, EditprofileState> {
   final StorageRepository _storageRepository;
   final AuthBloc _authBloc;
   final AuthRepository _authRepository;
+  final ChatRepository _chatRepository;
+  StreamSubscription<List<Future<Room>>>? _roomSubscription;
 
-  EditprofileBloc({
-    required UserRepository userRepository,
-    required StorageRepository storageRepository,
-    required AuthBloc authBloc,
-    required AuthRepository authRepository,
-  })  : _userRepository = userRepository,
+  EditprofileBloc(
+      {required UserRepository userRepository,
+      required StorageRepository storageRepository,
+      required AuthBloc authBloc,
+      required AuthRepository authRepository,
+      required ChatRepository chatRepository})
+      : _userRepository = userRepository,
         _authBloc = authBloc,
         _storageRepository = storageRepository,
         _authRepository = authRepository,
+        _chatRepository = chatRepository,
         super(EditprofileState.initial());
 
   @override
@@ -46,6 +55,20 @@ class EditprofileBloc extends Bloc<EditprofileEvent, EditprofileState> {
       yield* _mapProfileUpdateToState(event);
     } else if (event is ProfileLogOutEvent) {
       yield* _mapProfileLogOutToState(event);
+    } else if (event is UploadRoomImage) {
+      yield* _mapToUploadRoomImage(event);
+    } else if (event is CreateRoom) {
+      yield* _mapToCreateRoom(event);
+    } else if (event is ClearRoomImage) {
+      yield* _mapToClearRoomImage(event);
+    } else if (event is FetchRoom) {
+      yield* _mapToFetchRoom(event);
+    } else if (event is UpdateAllRooms) {
+      yield* _mapToUpdateAllRooms(event);
+    } else if (event is SearchRoom) {
+      yield* _mapToSearchRoom(event);
+    } else if (event is ClearRoomSearch) {
+      yield* _mapToClearSearch(event);
     }
   }
 
@@ -143,5 +166,71 @@ class EditprofileBloc extends Bloc<EditprofileEvent, EditprofileState> {
     return state.initialUsername != username
         ? await _userRepository.usernameExists(query: username)
         : false;
+  }
+
+  Stream<EditprofileState> _mapToUploadRoomImage(UploadRoomImage event) async* {
+    yield state.copyWith(status: EditprofileStatus.uploadingRoomImage);
+    final pickedFile = await ImageHelper.pickFromGallery(
+      context: event.context,
+      cropStyle: CropStyle.rectangle,
+      title: "Room Image",
+    );
+    if (pickedFile != null) {
+      final rImage = await _storageRepository.uploadProfileImage(
+          url: null, image: pickedFile);
+      yield state.copyWith(
+          roomImage: rImage, status: EditprofileStatus.uploadedRoomImage);
+    }
+  }
+
+  Stream<EditprofileState> _mapToCreateRoom(CreateRoom event) async* {
+    final userId = _authBloc.state.user!.uid;
+    _chatRepository.createRoom(event.room, userId);
+  }
+
+  Stream<EditprofileState> _mapToClearRoomImage(ClearRoomImage event) async* {
+    yield state.copyWith(roomImage: null);
+  }
+
+  Stream<EditprofileState> _mapToFetchRoom(FetchRoom event) async* {
+    try {
+      final currentUserId = _authBloc.state.user!.uid;
+      _roomSubscription =
+          _chatRepository.getRooms(currentUserId).listen((room) async {
+        final rooms = await Future.wait(room);
+        add(UpdateAllRooms(rooms: rooms));
+      });
+    } catch (err) {
+      yield state.copyWith(
+        status: EditprofileStatus.error,
+        failure: const Failure(
+          message: 'Unable To Fetch Rooms',
+        ),
+      );
+    }
+  }
+
+  Stream<EditprofileState> _mapToUpdateAllRooms(UpdateAllRooms event) async* {
+    yield state.copyWith(rooms: event.rooms);
+  }
+
+  Stream<EditprofileState> _mapToSearchRoom(SearchRoom event) async* {
+    yield state.copyWith(
+        status: EditprofileStatus.searchingRoom, withMe: [], withoutMe: []);
+    final currentUserId = _authBloc.state.user!.uid;
+    await _chatRepository.searchRoom(currentUserId, event.roomName);
+    final withMe = _chatRepository.searchRoomWithUser();
+    final withoutMe = _chatRepository.searchRoomWithoutUser();
+    yield state.copyWith(withMe: withMe, withoutMe: withoutMe);
+  }
+
+  Stream<EditprofileState> _mapToClearSearch(ClearRoomSearch event) async* {
+    yield state
+        .copyWith(status: EditprofileStatus.initial, withMe: [], withoutMe: []);
+  }
+
+  void updateRoom(String roomId) {
+    final currentUserId = _authBloc.state.user!.uid;
+    _chatRepository.updateRoom(roomId, currentUserId);
   }
 }
