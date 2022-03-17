@@ -3,6 +3,7 @@ import 'package:code/repositories/chat/chat_repository.dart';
 import 'package:code/repositories/repositories.dart';
 import 'package:code/screens/messaging_screen/message_screen.dart';
 import 'package:code/screens/nav_screen/nav_screen.dart';
+import 'package:code/screens/room_screen/cubits/liked_posts/liked_posts_cubit.dart';
 import 'package:code/widgets/user_profile.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -25,6 +26,8 @@ class RoomDescription extends StatelessWidget {
       settings: const RouteSettings(name: routeName),
       builder: (context) => BlocProvider(
         create: (context) => RoomBloc(
+          likedPostsCubit: context.read<LikedPostsCubit>(),
+          postRepository: context.read<PostRepository>(),
           authBloc: context.read<AuthBloc>(),
           chatRepository: context.read<ChatRepository>(),
           storageRepository: context.read<StorageRepository>(),
@@ -76,7 +79,9 @@ class RoomDescription extends StatelessWidget {
                                 state.room.imageUrl,
                                 fit: BoxFit.fill,
                               )
-                            : const Center(child: CircularProgressIndicator()),
+                            : const Center(
+                                child: CircularProgressIndicator(),
+                              ),
                       ),
                     ),
                   ),
@@ -176,6 +181,8 @@ class RoomDescription extends StatelessWidget {
                               context
                                   .read<RoomBloc>()
                                   .add(RemoveUser(userId: id));
+                              Navigator.of(context)
+                                  .pushReplacementNamed(NavScreen.routename);
                             },
                             label: const Text(
                               'Exit Group',
@@ -264,8 +271,21 @@ Widget _buildMemberTile(String name, String? imageUrl, String memberId,
             'You',
           )
         : ElevatedButton(
-            onPressed: () {
-              context.read<RoomBloc>().createChat(memberId);
+            onPressed: () async {
+              final chatExists =
+                  await context.read<RoomBloc>().chatExists(memberId);
+              if (!chatExists) {
+                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+                  content: Text('Chat Exists'),
+                  duration: Duration(seconds: 2),
+                ));
+              } else {
+                context.read<RoomBloc>().createChat(memberId);
+                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+                  content: Text('Chat Created'),
+                  duration: Duration(seconds: 2),
+                ));
+              }
               Navigator.of(context).pushNamed(MessagingScreen.routeName);
             },
             child: const Text('Chat'),
@@ -276,29 +296,30 @@ Widget _buildMemberTile(String name, String? imageUrl, String memberId,
 _showDialogBox(BuildContext context, RoomState state, String id, String name,
     String imageUrl) {
   return showDialog(
-      context: context,
-      builder: (_) => AlertDialog(
-            title: Row(
-              children: [
-                UserProfile(
-                  radius: 25,
-                  name: name,
-                  profileImageurl: imageUrl,
-                ),
-                const SizedBox(
-                  width: 20,
-                ),
-                Text(name),
-              ],
-            ),
-            actions: [
-              ElevatedButton(
-                onPressed: () {
-                  context.read<RoomBloc>().add(RemoveUser(userId: id));
-                  Navigator.of(context).pop();
-                },
-                child: const Text('Remove'),
-              )
-            ],
-          ));
+    context: context,
+    builder: (_) => AlertDialog(
+      title: Row(
+        children: [
+          UserProfile(
+            radius: 25,
+            name: name,
+            profileImageurl: imageUrl,
+          ),
+          const SizedBox(
+            width: 20,
+          ),
+          Text(name),
+        ],
+      ),
+      actions: [
+        ElevatedButton(
+          onPressed: () {
+            context.read<RoomBloc>().add(RemoveUser(userId: id));
+            Navigator.of(context).pop();
+          },
+          child: const Text('Remove'),
+        )
+      ],
+    ),
+  );
 }

@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:bloc/bloc.dart';
 import 'package:code/blocs/auth/auth_bloc.dart';
+import 'package:code/config/paths.dart';
 import 'package:code/helpers/image_helper.dart';
 import 'package:code/models/failure_model.dart';
 import 'package:code/models/message_model.dart';
@@ -86,8 +87,9 @@ class MessageBloc extends Bloc<MessageEvent, MessageState> {
   }
 
   Stream<MessageState> _mapGetMessagesToState(GetMessage event) async* {
-    _messageSubscription =
-        _chatRepository.getMessages(event.chatId).listen((message) async {
+    _messageSubscription = _chatRepository
+        .getMessages(event.chatId, Paths.privateChats)
+        .listen((message) async {
       final allMessages = await Future.wait(message);
       add(UpdateMessage(allMessages: allMessages));
     });
@@ -138,7 +140,8 @@ class MessageBloc extends Bloc<MessageEvent, MessageState> {
   }
 
   void deleteMessage(String chatId, String messageId) {
-    _chatRepository.deleteMessage(chatId, messageId);
+    _chatRepository.deleteMessage(
+        chatId, messageId, Paths.privateChats, Paths.messages);
   }
 
   Stream<MessageState> _mapToEmojiShowing(EmojiShowing event) async* {
@@ -155,19 +158,21 @@ class MessageBloc extends Bloc<MessageEvent, MessageState> {
   Stream<MessageState> _mapToUploadChatImage(UploadChatImage event) async* {
     yield state.copyWith(status: MessageStatus.uploading);
     final pickedFile = await ImageHelper.pickFromGallery(
-        context: event.context,
-        cropStyle: CropStyle.rectangle,
-        title: "Chat Image");
+      context: event.context,
+      cropStyle: CropStyle.rectangle,
+      title: "Chat Image",
+    );
+
     if (pickedFile != null) {
-      yield state.copyWith(
-        chatImage: await _storageRepository.uploadChatImage(
-            url: null, imageFile: pickedFile),
-      );
+      final rImage = await _storageRepository.uploadProfileImage(
+          url: null, image: pickedFile);
+      yield state.copyWith(chatImage: rImage, status: MessageStatus.uploaded);
+    } else {
+      yield state.copyWith(status: MessageStatus.initial);
     }
-    yield state.copyWith(status: MessageStatus.uploaded);
   }
 
   Stream<MessageState> _mapToClearSearch(ClearSeach event) async* {
-    yield state.copyWith(chatImage: null);
+    yield state.copyWith(chatImage: '');
   }
 }

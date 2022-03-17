@@ -129,17 +129,19 @@ class _SearchScreenState extends State<SearchScreen> {
                                         .read<SearchCubit>()
                                         .chatExists(user.id);
 
-                                    context
-                                        .read<SearchCubit>()
-                                        .createChat(user.id);
+                                    chatExists
+                                        ? context
+                                            .read<SearchCubit>()
+                                            .createChat(user.id)
+                                        : null;
 
                                     Navigator.of(context).pop();
                                     ScaffoldMessenger.of(context).showSnackBar(
                                       SnackBar(
                                         content: Text(
                                           chatExists
-                                              ? 'Chat Exists'
-                                              : 'Chat Created',
+                                              ? 'Chat Created'
+                                              : 'Chat Exists',
                                         ),
                                         duration: const Duration(seconds: 2),
                                       ),

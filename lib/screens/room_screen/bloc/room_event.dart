@@ -54,3 +54,48 @@ class RemoveUser extends RoomEvent {
   @override
   List<Object> get props => [userId];
 }
+
+class UploadImage extends RoomEvent {
+  final BuildContext context;
+  UploadImage({
+    required this.context,
+  });
+
+  @override
+  List<Object> get props => [context];
+}
+
+class ClrSearch extends RoomEvent {
+  const ClrSearch();
+  @override
+  List<Object> get props => [];
+}
+
+class ChangeView extends RoomEvent {
+  final int index;
+  const ChangeView({
+    required this.index,
+  });
+  @override
+  List<Object> get props => [index];
+}
+
+class GetPosts extends RoomEvent {
+  final String roomId;
+  GetPosts({
+    required this.roomId,
+  });
+
+  @override
+  List<Object> get props => [roomId];
+}
+
+class UpdatePosts extends RoomEvent {
+  final List<Post> posts;
+  UpdatePosts({
+    required this.posts,
+  });
+
+  @override
+  List<Object> get props => [posts];
+}

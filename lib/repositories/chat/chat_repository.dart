@@ -100,13 +100,15 @@ class ChatRepository extends BaseChatRepository {
     return true;
   }
 
-  @override
   Future<bool> privateChatExists(String currentUserId, String userId) async {
     final snap = await _firebaseFirestore
         .collection(Paths.privateChats)
         .where('memberIds', arrayContains: currentUserId)
         .get();
-    return snap.docs.isEmpty;
+    return snap.docs
+        .where((doc) => (doc.data()['memberIds'][0] == userId ||
+            doc.data()['memberIds'][1] == userId))
+        .isEmpty;
   }
 
   @override
@@ -130,40 +132,40 @@ class ChatRepository extends BaseChatRepository {
         );
   }
 
-  @override
-  Future<bool> createChat(
-      BuildContext context, String name, File file, List<String> users) async {
-    String? imageUrl =
-        await _storageRepository.uploadChatImage(url: null, imageFile: file);
+  // @override
+  // Future<bool> createChat(
+  //     BuildContext context, String name, File file, List<String> users) async {
+  //   String? imageUrl =
+  //       await _storageRepository.uploadChatImage(url: null, imageFile: file);
 
-    List<String> memberIds = [];
-    Map<String, dynamic> memberInfo = {};
-    Map<String, dynamic> readStatus = {};
+  //   List<String> memberIds = [];
+  //   Map<String, dynamic> memberInfo = {};
+  //   Map<String, dynamic> readStatus = {};
 
-    for (String userId in users) {
-      User user = await getUserWithId(userId: userId);
-      memberIds.add(userId);
-      Map<String, dynamic> userMap = {
-        'name': user.name,
-      };
-      memberInfo[userId] = userMap;
-      readStatus[userId] = false;
-    }
+  //   for (String userId in users) {
+  //     User user = await getUserWithId(userId: userId);
+  //     memberIds.add(userId);
+  //     Map<String, dynamic> userMap = {
+  //       'name': user.name,
+  //     };
+  //     memberInfo[userId] = userMap;
+  //     readStatus[userId] = false;
+  //   }
 
-    await _firebaseFirestore.collection(Paths.chats).add(
-      {
-        'name': name,
-        'imageUrl': imageUrl,
-        'recentMessage': 'Chat created',
-        'recentSender': '',
-        'recentTimestamp': Timestamp.now(),
-        'memberIds': memberIds,
-        'memberInfo': memberInfo,
-        'readStatus': readStatus,
-      },
-    );
-    return true;
-  }
+  //   await _firebaseFirestore.collection(Paths.chats).add(
+  //     {
+  //       'name': name,
+  //       'imageUrl': imageUrl,
+  //       'recentMessage': 'Chat created',
+  //       'recentSender': '',
+  //       'recentTimestamp': Timestamp.now(),
+  //       'memberIds': memberIds,
+  //       'memberInfo': memberInfo,
+  //       'readStatus': readStatus,
+  //     },
+  //   );
+  //   return true;
+  // }
 
   @override
   void setChatRead(String chatId, bool read, String currentUserId) {
@@ -203,9 +205,9 @@ class ChatRepository extends BaseChatRepository {
   }
 
   @override
-  Stream<List<Future<Message>>> getMessages(String id) {
+  Stream<List<Future<Message>>> getMessages(String id, String pathMain) {
     return _firebaseFirestore
-        .collection(Paths.rooms)
+        .collection(pathMain)
         .doc(id)
         .collection(Paths.messages)
         .orderBy('timestamp', descending: true)
@@ -221,12 +223,12 @@ class ChatRepository extends BaseChatRepository {
     _firebaseFirestore.collection(Paths.privateChats).doc(chatId).delete();
   }
 
-  @override
-  void deleteMessage(String chatId, String messageId) {
+  void deleteMessage(
+      String chatId, String messageId, String pathMain, String pathSub) {
     _firebaseFirestore
-        .collection(Paths.privateChats)
+        .collection(pathMain)
         .doc(chatId)
-        .collection(Paths.messages)
+        .collection(pathSub)
         .doc(messageId)
         .delete();
   }

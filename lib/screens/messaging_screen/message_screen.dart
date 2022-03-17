@@ -5,7 +5,6 @@ import 'package:code/repositories/repositories.dart';
 import 'package:code/screens/messaging_screen/bloc/message_bloc.dart';
 import 'package:code/screens/messaging_screen/chat_screen.dart';
 import 'package:code/screens/messaging_screen/search/search_screen.dart';
-import 'package:code/screens/messaging_screen/widgets/favorite_contacts.dart';
 import 'package:code/utils/firebase_constants.dart';
 import 'package:code/widgets/widget.dart';
 import 'package:flutter/material.dart';
@@ -90,33 +89,19 @@ class _MessagingScreenState extends State<MessagingScreen>
             ),
             child: Column(
               children: [
-                FavoriteContacts(),
                 SizedBox(
                   height: 50,
-                  child: TabBar(
-                    controller: _tabController,
-                    tabs: const [Text("Private"), Text("Groups")],
-                    indicatorWeight: 3.0,
-                    onTap: (i) {
-                      context
-                          .read<MessageBloc>()
-                          .add(PrivateChatView(isPrivate: i == 0));
-                    },
-                  ),
                 ),
                 Expanded(
                   child: Container(
-                    decoration: const BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.only(
-                        topLeft: Radius.circular(40.0),
-                        topRight: Radius.circular(40.0),
+                      decoration: const BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.only(
+                          topLeft: Radius.circular(40.0),
+                          topRight: Radius.circular(40.0),
+                        ),
                       ),
-                    ),
-                    child: state.isPrivate
-                        ? privateChats(context, state)
-                        : groupChats(context, state),
-                  ),
+                      child: privateChats(context, state)),
                 ),
               ],
             ),
@@ -125,10 +110,6 @@ class _MessagingScreenState extends State<MessagingScreen>
       ),
     );
   }
-}
-
-groupChats(BuildContext context, MessageState state) {
-  return Container();
 }
 
 privateChats(BuildContext context, MessageState state) {
@@ -230,7 +211,7 @@ privateChats(BuildContext context, MessageState state) {
                         ],
                       ),
                       const SizedBox(
-                        width: 50,
+                        width: 30,
                       ),
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.end,

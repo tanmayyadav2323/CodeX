@@ -20,7 +20,7 @@ class StorageRepository extends BaseStorageRepository {
     final path = tempDir.path;
     File? compressedImageFile = await FlutterImageCompress.compressAndGetFile(
         image.absolute.path, '$path/img_$imageId.jpg',
-        quality: 70);
+        quality: 50);
     return compressedImageFile!;
   }
 
@@ -86,6 +86,13 @@ class StorageRepository extends BaseStorageRepository {
       ref: 'images/messages/message_$imageId.jpg',
       image: image,
     );
+    return downloadUrl;
+  }
+
+  Future<String> uploadPostImage({required File image}) async {
+    final imageId = const Uuid().v4();
+    final downloadUrl =
+        await _uploadImage(image: image, ref: 'images/posts/post_$imageId.jpg');
     return downloadUrl;
   }
 }

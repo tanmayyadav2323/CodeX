@@ -16,7 +16,7 @@ class MessageState extends Equatable {
   final bool isPrivate;
   final bool emojiShowing;
   final bool keyboardShowing;
-  final String? chatImage;
+  final String chatImage;
   final MessageStatus status;
 
   const MessageState({
@@ -36,7 +36,7 @@ class MessageState extends Equatable {
       messages: [],
       isPrivate: true,
       failure: Failure(),
-      chatImage: null,
+      chatImage: '',
       emojiShowing: false,
       keyboardShowing: false,
       status: MessageStatus.initial,

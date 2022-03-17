@@ -2,17 +2,24 @@ import 'dart:io';
 
 import 'package:code/blocs/auth/auth_bloc.dart';
 import 'package:code/models/models.dart';
+import 'package:code/models/post_model.dart';
 import 'package:code/repositories/chat/chat_repository.dart';
+import 'package:code/repositories/repositories.dart';
 import 'package:code/repositories/storage/storage_repository.dart';
+import 'package:code/screens/room_screen/create_post/create_post_screen.dart';
 import 'package:code/screens/room_screen/room_description.dart';
+import 'package:code/screens/room_screen/widgets/post_view.dart';
 import 'package:code/screens/room_screen/widgets/widgets.dart';
+import 'package:code/screens/screens.dart';
 import 'package:code/utils/firebase_constants.dart';
+import 'package:code/utils/theme_constants.dart';
 import 'package:code/widgets/user_profile.dart';
 import 'package:emoji_picker_flutter/emoji_picker_flutter.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import 'bloc/room_bloc.dart';
+import 'cubits/liked_posts/liked_posts_cubit.dart';
 
 class RoomArgs {
   String roomId;
@@ -29,12 +36,16 @@ class RoomScreen extends StatefulWidget {
       settings: const RouteSettings(name: routeName),
       builder: (context) => BlocProvider(
         create: (context) => RoomBloc(
+          likedPostsCubit: context.read<LikedPostsCubit>(),
+          postRepository: context.read<PostRepository>(),
           authBloc: context.read<AuthBloc>(),
           chatRepository: context.read<ChatRepository>(),
           storageRepository: context.read<StorageRepository>(),
         )
           ..add(GetMessages(roomId: args.roomId))
-          ..add(GetRoom(roomId: args.roomId)),
+          ..add(GetRoom(roomId: args.roomId))
+          ..add(GetPosts(roomId: args.roomId))
+          ..postLike(),
         child: RoomScreen(roomId: args.roomId),
       ),
     );
@@ -50,9 +61,15 @@ class _RoomScreenState extends State<RoomScreen>
     with SingleTickerProviderStateMixin {
   TabController? _tabController;
   final TextEditingController controller = TextEditingController();
+  int _selectedIndex = 0;
   @override
   void initState() {
     _tabController = TabController(length: 2, vsync: this);
+    _tabController!.addListener(() {
+      setState(() {
+        _selectedIndex = _tabController!.index;
+      });
+    });
     super.initState();
   }
 
@@ -69,47 +86,72 @@ class _RoomScreenState extends State<RoomScreen>
         // TODO: implement listener
       },
       builder: (context, state) {
-        return Scaffold(
-            appBar: CustomAppBar(
-              onTap: () => Navigator.of(context).pushNamed(
-                  RoomDescription.routeName,
-                  arguments: RoomDesArgs(roomId: widget.roomId)),
-              appBar: AppBar(
-                leading: Padding(
-                  padding: const EdgeInsets.all(8.0),
-                  child: UserProfile(
-                    name: state.room.name,
-                    radius: 8,
-                    profileImageurl: state.room.imageUrl,
+        return GestureDetector(
+          onTap: () => FocusScope.of(context).unfocus(),
+          child: Scaffold(
+              appBar: PreferredSize(
+                preferredSize: Size.fromHeight(100.0),
+                child: CustomAppBar(
+                  onTap: () => Navigator.of(context).pushNamed(
+                    RoomDescription.routeName,
+                    arguments: RoomDesArgs(roomId: widget.roomId),
+                  ),
+                  appBar: AppBar(
+                    leading: Padding(
+                      padding: const EdgeInsets.all(8.0),
+                      child: UserProfile(
+                        name: state.room.name,
+                        radius: 8,
+                        profileImageurl: state.room.imageUrl,
+                      ),
+                    ),
+                    title: Text(state.room.name),
+                    bottom: TabBar(
+                      controller: _tabController,
+                      labelPadding: EdgeInsets.all(10),
+                      tabs: const [
+                        Text(
+                          'Discussions',
+                          style: TextStyle(fontSize: 18),
+                        ),
+                        Text(
+                          'Posts',
+                          style: TextStyle(fontSize: 18),
+                        ),
+                      ],
+                    ),
+                    elevation: 0,
                   ),
                 ),
-                title: Text(state.room.name),
-                elevation: 0,
-                actions: const [
-                  Icon(Icons.more_vert),
-                  SizedBox(
-                    width: 15,
-                  )
+              ),
+              body: TabBarView(
+                controller: _tabController,
+                children: [
+                  Column(
+                    children: [
+                      _buildDiscussionScreen(context, state),
+                      _buildSendMessage(
+                          state, controller, context, widget.roomId),
+                    ],
+                  ),
+                  _buildPost(state, context)
                 ],
               ),
-            ),
-            body: Column(
-              children: [
-                SizedBox(
-                  height: 60,
-                  child: TabBar(
-                    labelPadding: const EdgeInsets.all(10),
-                    tabs: const [
-                      Text('Discussions'),
-                      Text('Posts'),
-                    ],
-                    controller: _tabController,
-                  ),
-                ),
-                _buildDiscussionScreen(context, state),
-                _buildSendMessage(state, controller, context, widget.roomId),
-              ],
-            ));
+              floatingActionButton: _selectedIndex == 1
+                  ? FloatingActionButton(
+                      backgroundColor: appBarBackgroundColor,
+                      onPressed: () {
+                        Navigator.of(context).pushNamed(
+                            CreatePostScreen.routeName,
+                            arguments: CreatePostArgs(roomId: widget.roomId));
+                      },
+                      child: const Icon(
+                        Icons.add,
+                      ),
+                      elevation: 5,
+                    )
+                  : null),
+        );
       },
     );
   }
@@ -158,24 +200,25 @@ _buildMessage(
   final member = state.room.memberInfo != null
       ? state.room.memberInfo![message.senderId]
       : '';
+  final currentUser = context.read<RoomBloc>();
   return GestureDetector(
-    onLongPress: () => showDialog(
-      context: context,
-      builder: (_) => AlertDialog(
-        content: const Text('Delete Message'),
-        actions: [
-          ElevatedButton(
-            onPressed: () {
-              Navigator.of(context).pop();
-              // context
-              //     .read<RoomBloc>()
-              //     .deleteMessage(widget..id!, message.id!);
-            },
-            child: const Text('Delete'),
+    onLongPress: () => currentUser.currentUserMessage(message.senderId!)
+        ? showDialog(
+            context: context,
+            builder: (_) => AlertDialog(
+              content: const Text('Delete Message'),
+              actions: [
+                ElevatedButton(
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                    context.read<RoomBloc>().deleteMessage(message.id!);
+                  },
+                  child: const Text('Delete'),
+                )
+              ],
+            ),
           )
-        ],
-      ),
-    ),
+        : null,
     child: Row(
       mainAxisAlignment: isMe ? MainAxisAlignment.end : MainAxisAlignment.start,
       children: [
@@ -207,39 +250,34 @@ _buildMessage(
                 height: 4.0,
               ),
               Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Row(
-                    children: [
-                      UserProfile(
-                        radius: 12,
-                        name: member['name'],
-                        profileImageurl: member['imageUrl'],
-                      ),
-                      SizedBox(
-                        width: 10,
-                      ),
-                      Text(member['name']),
-                    ],
+                  UserProfile(
+                    radius: 12,
+                    name: member['name'],
+                    profileImageurl: member['imageUrl'],
+                  ),
+                  const SizedBox(
+                    width: 10,
                   ),
                   Text(
-                    timeFormat.format(message.timestamp!.toDate()),
-                    style:
-                        const TextStyle(fontSize: 12.0, color: Colors.black54),
+                    member['name'],
                   ),
                 ],
               ),
               const SizedBox(
                 height: 8.0,
               ),
-              // message.imageUrl != null
-              //     ? Container(
-              //         alignment: Alignment.centerLeft,
-              //         margin: const EdgeInsets.symmetric(vertical: 5),
-              //         height: 250,
-              //         child: Image.network(message.imageUrl!),
-              //       )
-              //     : const SizedBox.shrink(),
+              message.imageUrl != ''
+                  ? Container(
+                      alignment: Alignment.centerLeft,
+                      margin: const EdgeInsets.symmetric(vertical: 5),
+                      height: 250,
+                      child: Image.network(
+                        message.imageUrl!,
+                        filterQuality: FilterQuality.low,
+                      ),
+                    )
+                  : const SizedBox.shrink(),
               if (message.text!.trim().isNotEmpty)
                 Text(
                   message.text!,
@@ -254,11 +292,18 @@ _buildMessage(
               ),
               message.isLiked
                   ? const Icon(Icons.favorite, size: 30.0)
-                  : const SizedBox.shrink()
+                  : const SizedBox.shrink(),
+              Text(
+                timeFormat.format(message.timestamp!.toDate()),
+                style: const TextStyle(
+                    fontSize: 12.0,
+                    color: Colors.black54,
+                    fontWeight: FontWeight.w300),
+              ),
             ],
           ),
         ),
-        SizedBox(
+        const SizedBox(
           width: 10,
         )
       ],
@@ -284,13 +329,20 @@ _buildSendMessage(RoomState state, TextEditingController controller,
 
   return Column(
     children: [
-      // if (state.chatImage != null)
-      //   Container(
-      //     margin: const EdgeInsets.all(10),
-      //     alignment: Alignment.center,
-      //     height: 250,
-      //     child: Image.network(state.chatImage!),
-      //   ),
+      state.image != '' || state.status == RoomStatus.uploadingImage
+          ? Container(
+              margin: const EdgeInsets.all(10),
+              color: Colors.lightGreen[50],
+              alignment: Alignment.center,
+              height: 250,
+              child: state.status == RoomStatus.uploadingImage
+                  ? const CircularProgressIndicator()
+                  : Image.network(
+                      state.image,
+                      filterQuality: FilterQuality.low,
+                    ),
+            )
+          : const SizedBox.shrink(),
       Padding(
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
         child: Container(
@@ -335,9 +387,9 @@ _buildSendMessage(RoomState state, TextEditingController controller,
                 children: [
                   IconButton(
                     onPressed: () {
-                      // context
-                      //     .read<MessageBloc>()
-                      //     .add(UploadChatImage(context: context));
+                      context
+                          .read<RoomBloc>()
+                          .add(UploadImage(context: context));
                     },
                     icon: const Icon(Icons.camera_alt_outlined),
                   ),
@@ -346,14 +398,13 @@ _buildSendMessage(RoomState state, TextEditingController controller,
                   ),
                   GestureDetector(
                     onTap: () {
-                      if (state.image != null || controller.text != '') {
+                      if (state.image != '' || controller.text != '') {
                         context.read<RoomBloc>().sendMessage(
                               text: controller.text,
                               imageUrl: state.image,
                               roomId: roomId,
                             );
                         controller.clear();
-                        // context.read<MessageBloc>().add(const ClearSeach());
                       }
                     },
                     child: CircleAvatar(
@@ -405,4 +456,63 @@ _buildSendMessage(RoomState state, TextEditingController controller,
       ),
     ],
   );
+}
+
+_buildPost(RoomState state, BuildContext context) {
+  final posts = state.posts;
+  if (posts.isEmpty) {
+    return const Center(
+      child: Text('No Posts'),
+    );
+  } else {
+    return ListView.builder(
+      itemBuilder: (_, index) {
+        final isMe =
+            context.read<RoomBloc>().currentUserMessage(posts[index].author.id);
+        final post = state.posts[index];
+        final likedPostsState = context.read<LikedPostsCubit>().state;
+        final isLiked = likedPostsState.likedPostIds.contains(post.id);
+        // final recentlyLiked =
+        //     likedPostsState.recentlyLikedPostIds.contains(post.id);
+        return PostView(
+          post: post,
+          isLiked: isLiked,
+          recentlyLiked: false,
+          onLike: () {
+            if (isLiked) {
+              context.read<LikedPostsCubit>().unlikedPost(post: post);
+            } else {
+              context.read<LikedPostsCubit>().likedPost(post: post);
+            }
+          },
+          isMe: isMe,
+          onTap: !isMe
+              ? () {
+                  _buildChat(context, posts[index].author.id);
+                }
+              : () {
+                  context.read<RoomBloc>().deletePost(posts[index].id!);
+                },
+        );
+      },
+      itemCount: posts.length,
+    );
+  }
+}
+
+_buildChat(BuildContext context, String id) async {
+  final chatExists = await context.read<RoomBloc>().chatExists(id);
+  if (!chatExists) {
+    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+      content: Text('Chat Exists'),
+      duration: Duration(seconds: 2),
+    ));
+  } else {
+    context.read<RoomBloc>().createChat(id);
+    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+      content: Text('Chat Created'),
+      duration: Duration(seconds: 2),
+    ));
+  }
+  Navigator.of(context).pushNamed(MessagingScreen.routeName);
 }

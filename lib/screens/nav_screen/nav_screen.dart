@@ -65,7 +65,7 @@ class _NavScreenState extends State<NavScreen> {
         },
         builder: (context, state) {
           return GestureDetector(
-            onTap: () => FocusScope.of(context).unfocus(),
+            onTap: () => FocusManager.instance.primaryFocus?.unfocus(),
             child: Scaffold(
               resizeToAvoidBottomInset: false,
               appBar: AppBar(
@@ -84,6 +84,7 @@ class _NavScreenState extends State<NavScreen> {
                         ),
                       ),
                       onPressed: () {
+                        FocusManager.instance.primaryFocus?.unfocus();
                         Scaffold.of(context).openDrawer();
                       },
                     );
@@ -103,8 +104,6 @@ class _NavScreenState extends State<NavScreen> {
 
 Drawer _buildDrawer(EditprofileState state, BuildContext context) {
   final size = MediaQuery.of(context).size;
-  final usernameController = TextEditingController();
-
   return Drawer(
     child: state.status == EditprofileStatus.submitting
         ? Padding(
@@ -185,7 +184,7 @@ Drawer _buildDrawer(EditprofileState state, BuildContext context) {
                                 color: Colors.white, fontSize: 30),
                           ),
                           TextFormField(
-                            controller: usernameController,
+                            initialValue: state.username,
                             onChanged: (value) async {
                               context
                                   .read<EditprofileBloc>()
@@ -201,20 +200,19 @@ Drawer _buildDrawer(EditprofileState state, BuildContext context) {
                                   const BoxConstraints(maxHeight: 30),
                               suffixIcon: CircleAvatar(
                                 child: Icon(
-                                  state.status ==
-                                              EditprofileStatus
-                                                  .userNameExists ||
-                                          state.username.length < 6
+                                  state.userNameStatus ==
+                                              UserNameStatus.exists ||
+                                          state.username.length < 5
                                       ? Icons.close
                                       : Icons.check,
                                 ),
                               ),
                               errorStyle: const TextStyle(
                                   color: scaffoldBackgroundColor),
-                              errorText: state.username.length < 6
+                              errorText: state.username.length < 5
                                   ? 'Username Should be more than five digits'
-                                  : state.status ==
-                                          EditprofileStatus.userNameExists
+                                  : state.userNameStatus ==
+                                          UserNameStatus.exists
                                       ? 'Username Exists'
                                       : null,
                               contentPadding: const EdgeInsets.only(top: 0),
@@ -345,21 +343,28 @@ Drawer _buildDrawer(EditprofileState state, BuildContext context) {
                       children: [
                         ElevatedButton(
                           onPressed: () async {
-                            final check = await context
-                                .read<EditprofileBloc>()
-                                .usernameExists(usernameController.text);
-                            if (usernameController.text == 'Tanmay') {
+                            if (state.name.length < 3) {
                               showDialog(
                                 context: context,
                                 builder: (_) => const AlertDialog(
-                                  content: Text('Username Cannot be empty'),
+                                  content: Text('Please Enter Name >= 3'),
                                 ),
                               );
-                            } else if (check) {
+                            } else if (state.userNameStatus ==
+                                UserNameStatus.exists) {
                               showDialog(
                                 context: context,
                                 builder: (_) => const AlertDialog(
                                   content: Text('Username Already Exists'),
+                                ),
+                              );
+                            } else if (state.initialUsername.length < 5 &&
+                                state.username.length < 5) {
+                              showDialog(
+                                context: context,
+                                builder: (_) => const AlertDialog(
+                                  content:
+                                      Text('Please enter correct Username'),
                                 ),
                               );
                             } else {
@@ -506,25 +511,6 @@ _buildFloatingActionButton(BuildContext context, EditprofileState state) {
       )
     ],
   );
-}
-
-dynamic createRoom(BuildContext context, EditprofileState state) {
-  final _formKey = GlobalKey<FormState>();
-  TextEditingController _createRoom = TextEditingController();
-  TextEditingController _bio = TextEditingController();
-
-  return state.status == EditprofileStatus.uploadingRoomImage
-      ? const CircularProgressIndicator()
-      : showDialog(
-          context: context,
-          builder: (_) => AlertDialog(
-            title: const Text("Create Room"),
-            content: null,
-            actions: [
-              ElevatedButton(onPressed: () {}, child: const Text("Create"))
-            ],
-          ),
-        );
 }
 
 dynamic roomsList(BuildContext context, EditprofileState state) {

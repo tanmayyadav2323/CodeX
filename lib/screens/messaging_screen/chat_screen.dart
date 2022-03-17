@@ -111,7 +111,6 @@ class _ChatScreenState extends State<ChatScreen> {
         body: BlocConsumer<MessageBloc, MessageState>(
           listener: (context, state) {},
           builder: (context, state) {
-            final message = state.messages;
             return Column(
               children: [
                 Expanded(
@@ -123,7 +122,7 @@ class _ChatScreenState extends State<ChatScreen> {
                         topRight: Radius.circular(30.0),
                       ),
                     ),
-                    child: message.isEmpty
+                    child: state.messages.isEmpty
                         ? Container(
                             padding: EdgeInsets.symmetric(
                                 vertical: size.height * 0.06),
@@ -144,12 +143,12 @@ class _ChatScreenState extends State<ChatScreen> {
                         : ListView.builder(
                             reverse: true,
                             padding: EdgeInsets.only(top: size.height * 0.05),
-                            itemCount: message.length,
+                            itemCount: state.messages.length,
                             itemBuilder: (BuildContext context, int index) {
                               final isMe = context
                                   .read<MessageBloc>()
-                                  .currentUserMessage(message[index]);
-                              return _buildMessage(message[index], isMe);
+                                  .currentUserMessage(state.messages[index]);
+                              return _buildMessage(state.messages[index], isMe);
                             },
                           ),
                   ),
@@ -219,7 +218,7 @@ class _ChatScreenState extends State<ChatScreen> {
             const SizedBox(
               height: 8.0,
             ),
-            message.imageUrl != null
+            message.imageUrl != ''
                 ? Container(
                     alignment: Alignment.centerLeft,
                     margin: const EdgeInsets.symmetric(vertical: 5),
@@ -265,12 +264,17 @@ class _ChatScreenState extends State<ChatScreen> {
 
     return Column(
       children: [
-        if (state.chatImage != null)
+        if (state.chatImage != '' || state.status == MessageStatus.uploading)
           Container(
             margin: const EdgeInsets.all(10),
             alignment: Alignment.center,
             height: 250,
-            child: Image.network(state.chatImage!),
+            child: state.status == MessageStatus.uploading
+                ? CircularProgressIndicator()
+                : Image.network(
+                    state.chatImage,
+                    filterQuality: FilterQuality.low,
+                  ),
           ),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
@@ -327,7 +331,7 @@ class _ChatScreenState extends State<ChatScreen> {
                     ),
                     GestureDetector(
                       onTap: () {
-                        if (state.chatImage != null || controller.text != '') {
+                        if (state.chatImage != '' || controller.text != '') {
                           context.read<MessageBloc>().sendMessage(
                                 text: controller.text,
                                 imageUrl: state.chatImage,

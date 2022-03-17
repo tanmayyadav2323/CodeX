@@ -122,3 +122,9 @@ class ClearRoomSearch extends EditprofileEvent {
   @override
   List<Object> get props => [];
 }
+
+class UpdateSingleRoom extends EditprofileEvent {
+  const UpdateSingleRoom();
+  @override
+  List<Object> get props => [];
+}

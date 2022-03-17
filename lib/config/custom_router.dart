@@ -1,5 +1,6 @@
 import 'package:code/screens/messaging_screen/search/search_screen.dart';
 import 'package:code/screens/nav_screen/create_room_screen.dart';
+import 'package:code/screens/room_screen/create_post/create_post_screen.dart';
 import 'package:code/screens/room_screen/room_description.dart';
 import 'package:code/screens/room_screen/room_screen.dart';
 import 'package:code/screens/screens.dart';
@@ -37,6 +38,12 @@ class CustomRouter {
         return RoomScreen.route(args: settings.arguments as RoomArgs);
       case RoomDescription.routeName:
         return RoomDescription.route(args: settings.arguments as RoomDesArgs);
+      case CreatePostScreen.routeName:
+        return CreatePostScreen.route(
+            args: settings.arguments as CreatePostArgs);
+      case CommentsScreen.routeName:
+        return CommentsScreen.route(
+            args: settings.arguments as CommentsScreenArgs);
       default:
         return _errorRoute();
     }

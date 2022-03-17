@@ -114,13 +114,15 @@ class _AuthenticationScreenState extends State<AuthenticationScreen> {
                               ElevatedButton(
                                 style: ButtonStyle(
                                   elevation: MaterialStateProperty.all(1),
-                                  backgroundColor: MaterialStateProperty.all(
-                                      Theme.of(context).primaryColor),
+                                  backgroundColor:
+                                      MaterialStateProperty.all(Colors.blue),
                                   textStyle: MaterialStateProperty.all(
                                       const TextStyle(color: Colors.white)),
                                 ),
                                 onPressed: submit,
-                                child: const Text('Send OTP'),
+                                child: const Text(
+                                  'Send OTP',
+                                ),
                               ),
                             const SizedBox(
                               height: 20.0,

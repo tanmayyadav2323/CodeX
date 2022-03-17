@@ -94,14 +94,18 @@ class EditprofileBloc extends Bloc<EditprofileEvent, EditprofileState> {
 
   Stream<EditprofileState> _mapProfileUsernameToState(
       ProfileUsernameChanged event) async* {
-    final check = event.username != state.initialUsername
-        ? await _userRepository.usernameExists(query: event.username)
-        : false;
-    if (check) {
-      yield state.copyWith(status: EditprofileStatus.userNameExists);
+    if (event.username.length >= 5 && event.username != state.initialUsername) {
+      final check = await _userRepository.usernameExists(query: event.username);
+      if (check) {
+        yield state.copyWith(
+            userNameStatus: UserNameStatus.exists, username: event.username);
+      } else {
+        yield state.copyWith(
+            username: event.username, userNameStatus: UserNameStatus.notExists);
+      }
     } else {
       yield state.copyWith(
-          username: event.username, status: EditprofileStatus.initial);
+          username: event.username, userNameStatus: UserNameStatus.notExists);
     }
   }
 
@@ -160,12 +164,6 @@ class EditprofileBloc extends Bloc<EditprofileEvent, EditprofileState> {
             const Failure(message: 'We were unable to update your profile'),
       );
     }
-  }
-
-  Future<bool> usernameExists(String username) async {
-    return state.initialUsername != username
-        ? await _userRepository.usernameExists(query: username)
-        : false;
   }
 
   Stream<EditprofileState> _mapToUploadRoomImage(UploadRoomImage event) async* {
